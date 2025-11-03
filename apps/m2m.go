@@ -1,33 +1,84 @@
 package apps
 
 import (
+	"crypto/tls"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
+	"sync"
 	"time"
 )
 
 const (
-	TOKEN_ENDPOINT = "/oauth2/token"
+	TOKEN_ENDPOINT = "oauth2/token"
 	GRANT_TYPE     = "grant_type=client_credentials"
 )
 
 type M2M struct {
-	host string
+	lock sync.RWMutex
 
 	clientId     string
 	clientSecret string
 	scopes       string
-	token        Token
-	expiration   time.Time
+	token        *Token
+	expiration   *time.Time
 
-	client http.Client
+	host   string
+	client *http.Client
 }
 
 type Token struct {
-	access_token string
-	token_type   string
-	expires_in   int
+	AccessToken string `json:"access_token"`
+	TokenType   string `json:"token_type"`
+	ExpiresIn   int    `json:"expires_in"`
+	Scope       string `json:"scope"`
+}
+
+type ApplicationBuilder interface {
+	New() M2M
+	ClientId(clientId string)
+	ClientSecret()
+	Scopes()
+	Host()
+}
+
+func New() M2M {
+
+	client := &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: true,
+			},
+		},
+	}
+
+	return M2M{
+		clientId:     "",
+		clientSecret: "",
+		scopes:       "",
+		token:        nil,
+		expiration:   new(time.Time),
+
+		host:   "",
+		client: client,
+	}
+}
+
+func (m *M2M) ClientId(clientID string) {
+	m.clientId = clientID
+}
+
+func (m *M2M) ClientSecret(secret string) {
+	m.clientSecret = secret
+}
+
+func (m *M2M) Scopes(scope string) {
+	m.scopes = scope
+}
+
+func (m *M2M) Host(host string) {
+	m.host = host
 }
 
 type Application interface {
@@ -36,11 +87,28 @@ type Application interface {
 	retriveToken() Token
 }
 
-func getToken(m M2M) string {
-	return ""
+func (m *M2M) GetToken() string {
+	now := time.Now()
+
+	if now.After(*m.expiration) {
+
+		newToken := m.retriveToken()
+
+		m.lock.Lock()
+		defer m.lock.Unlock()
+
+		m.token = &newToken
+
+		return newToken.AccessToken
+
+	} else {
+		m.lock.RLock()
+		defer m.lock.RUnlock()
+		return m.token.AccessToken
+	}
 }
 
-func retriveToken(m M2M) Token {
+func (m *M2M) retriveToken() Token {
 	url := fmt.Sprintf("%s/%s", m.host, TOKEN_ENDPOINT)
 	body := fmt.Sprintf("%s&scope=%s", GRANT_TYPE, m.scopes)
 	payload := strings.NewReader(body)
@@ -54,11 +122,19 @@ func retriveToken(m M2M) Token {
 	request.SetBasicAuth(m.clientId, m.clientSecret)
 	request.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 
-	m.client.Do(request)
-
-	return Token{
-		token_type:   "null",
-		expires_in:   34,
-		access_token: "null",
+	response, err := m.client.Do(request)
+	if err != nil {
+		panic("was not able to generate request")
 	}
+	defer response.Body.Close()
+
+	var token Token
+
+	err = json.NewDecoder(response.Body).Decode(&token)
+
+	if err != nil {
+		panic("err")
+	}
+
+	return token
 }
