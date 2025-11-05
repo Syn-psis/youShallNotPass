@@ -178,17 +178,67 @@ func PutUpdateUser[T any, U any](app apps.AuthApplication, UserID string, Update
 	var user T
 
 	url := fmt.Sprintf("%s/%s/%s", app.GetHost(), SCIM_USER, UserID)
-	request, err := http.NewRequest("GET", url, nil)
+	body, err := json.Marshal(user)
 	if err != nil {
 		return user, err
 	}
 
+	payload := bytes.NewReader(body)
+
+	request, err := http.NewRequest("PUT", url, payload)
+	if err != nil {
+		return user, err
+	}
+
+	request.Header.Set("Authorization", "Bearer "+app.GetToken())
+	request.Header.Set("accept", "application/scim+json")
+
+	response, err := app.GetClient().Do(request)
+	if err != nil {
+		return user, err
+	}
+
+	if response.StatusCode != 200 {
+		errorMessage := fmt.Sprintf("could not update user due to server response: %d", response.StatusCode)
+		return user, errors.New(errorMessage)
+	}
+
+	defer response.Body.Close()
+
+	err = json.NewDecoder(response.Body).Decode(&user)
+	if err != nil {
+		return user, err
+	}
+
+	return user, nil
+
 }
 
-// func DeleteUser[T any]() (T, error) {
+func DeleteUser(app apps.AuthApplication, UserID string) error {
+	url := fmt.Sprintf("%s/%s/%s", app.GetHost(), SCIM_USER, UserID)
 
-// }
+	request, err := http.NewRequest("DELETE", url, nil)
+	if err != nil {
+		return err
+	}
 
-// func PatchUpdateUser[T any]() (T, error) {
+	request.Header.Set("Authorization", "Bearer "+app.GetToken())
+	request.Header.Set("accept", "application/scim+json")
 
-// }
+	response, err := app.GetClient().Do(request)
+	if err != nil {
+		return err
+	}
+
+	if response.StatusCode != 204 {
+		errorMessage := fmt.Sprintf("could not delete user due to server response: %d", response.StatusCode)
+		return errors.New(errorMessage)
+	}
+
+	return nil
+
+}
+
+func PatchUpdateUser[T any]() (T, error) {
+
+}
