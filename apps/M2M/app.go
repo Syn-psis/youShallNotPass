@@ -1,4 +1,4 @@
-package apps
+package m2m
 
 import (
 	"crypto/tls"
@@ -12,7 +12,7 @@ import (
 
 const (
 	TOKEN_ENDPOINT = "oauth2/token"
-	GRANT_TYPE     = "grant_type=client_credentials"
+	GRANT_TYPE     = "client_credentials"
 )
 
 type M2M struct {
@@ -22,7 +22,7 @@ type M2M struct {
 	clientSecret string
 	scopes       string
 	token        *Token
-	expiration   *time.Time
+	expiration   time.Time
 
 	host   string
 	client *http.Client
@@ -58,7 +58,7 @@ func New() M2M {
 		clientSecret: "",
 		scopes:       "",
 		token:        nil,
-		expiration:   new(time.Time),
+		expiration:   *new(time.Time),
 
 		host:   "",
 		client: client,
@@ -90,7 +90,7 @@ type Application interface {
 func (m *M2M) GetToken() string {
 	now := time.Now()
 
-	if now.After(*m.expiration) {
+	if now.After(m.expiration) {
 
 		newToken := m.retriveToken()
 
@@ -98,6 +98,7 @@ func (m *M2M) GetToken() string {
 		defer m.lock.Unlock()
 
 		m.token = &newToken
+		m.expiration = time.Now().Add(time.Duration(newToken.ExpiresIn-1) * time.Second)
 
 		return newToken.AccessToken
 
@@ -110,7 +111,7 @@ func (m *M2M) GetToken() string {
 
 func (m *M2M) retriveToken() Token {
 	url := fmt.Sprintf("%s/%s", m.host, TOKEN_ENDPOINT)
-	body := fmt.Sprintf("%s&scope=%s", GRANT_TYPE, m.scopes)
+	body := fmt.Sprintf("grant_type=%s&scope=%s", GRANT_TYPE, m.scopes)
 	payload := strings.NewReader(body)
 
 	request, err := http.NewRequest("POST", url, payload)
@@ -137,4 +138,12 @@ func (m *M2M) retriveToken() Token {
 	}
 
 	return token
+}
+
+func (m *M2M) GetHost() string {
+	return m.host
+}
+
+func (m *M2M) GetClient() *http.Client {
+	return m.client
 }
