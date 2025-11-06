@@ -1,8 +1,8 @@
 package main
 
 import (
-	m2m "axion/lib/youShallNotPass/apps/M2M"
 	"fmt"
+	m2m "github.com/Syn-psis/youShallNotPass/apps/M2M"
 )
 
 type User struct {

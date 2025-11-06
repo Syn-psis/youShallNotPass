@@ -1,11 +1,11 @@
 package m2m
 
 import (
-	"axion/lib/youShallNotPass/apps"
 	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/Syn-psis/youShallNotPass/apps"
 	"net/http"
 )
 
