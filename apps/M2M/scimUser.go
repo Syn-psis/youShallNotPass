@@ -5,8 +5,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/Syn-psis/youShallNotPass/apps"
 	"net/http"
+
+	"github.com/Syn-psis/youShallNotPass/apps"
 )
 
 const (
@@ -144,11 +145,16 @@ func SearchUser[T any](app apps.AuthApplication, search ScimSearch) (ScimResourc
 	return users, nil
 }
 
-func GetUserByID[T any](app apps.AuthApplication, UserID string) (T, error) {
+func GetUserByID[T any](app apps.AuthApplication, UserID string, filters *string) (T, error) {
 
 	var user T
+	defaultFilters := ""
 
-	url := fmt.Sprintf("%s/%s/%s", app.GetHost(), SCIM_USER, UserID)
+	if filters == nil {
+		filters = &defaultFilters
+	}
+
+	url := fmt.Sprintf("%s/%s/%s?%s", app.GetHost(), SCIM_USER, UserID, filters)
 	request, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return user, err
