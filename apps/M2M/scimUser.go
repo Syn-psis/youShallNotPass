@@ -30,6 +30,11 @@ type ScimSearch struct {
 	Count      int      `json:"count"`
 }
 
+type ScimPatch[Op any] struct {
+	Schemas    []string `json:"schemas"`
+	Operations []Op     `json:"Operations"`
+}
+
 func FilterUser[T any](app apps.AuthApplication, filters *string) (ScimResource[T], error) {
 	var user ScimResource[T]
 	defaultFilters := ""
@@ -178,7 +183,7 @@ func PutUpdateUser[T any, U any](app apps.AuthApplication, UserID string, Update
 	var user T
 
 	url := fmt.Sprintf("%s/%s/%s", app.GetHost(), SCIM_USER, UserID)
-	body, err := json.Marshal(user)
+	body, err := json.Marshal(Update)
 	if err != nil {
 		return user, err
 	}
@@ -239,6 +244,46 @@ func DeleteUser(app apps.AuthApplication, UserID string) error {
 
 }
 
-func PatchUpdateUser[T any]() (T, error) {
+func PatchUpdateUser[T any, U any](app apps.AuthApplication, UserID string, Update []U) (T, error) {
+	var user T
+	patchOp := ScimPatch[U]{
+		Schemas:    []string{"urn:ietf:params:scim:api:messages:2.0:PatchOp"},
+		Operations: Update,
+	}
+
+	url := fmt.Sprintf("%s/%s/%s", app.GetHost(), SCIM_USER, UserID)
+	body, err := json.Marshal(patchOp)
+	if err != nil {
+		return user, err
+	}
+
+	payload := bytes.NewReader(body)
+
+	request, err := http.NewRequest("PUT", url, payload)
+	if err != nil {
+		return user, err
+	}
+
+	request.Header.Set("Authorization", "Bearer "+app.GetToken())
+	request.Header.Set("accept", "application/scim+json")
+
+	response, err := app.GetClient().Do(request)
+	if err != nil {
+		return user, err
+	}
+
+	if response.StatusCode != 200 {
+		errorMessage := fmt.Sprintf("could not update user due to server response: %d", response.StatusCode)
+		return user, errors.New(errorMessage)
+	}
+
+	defer response.Body.Close()
+
+	err = json.NewDecoder(response.Body).Decode(&user)
+	if err != nil {
+		return user, err
+	}
+
+	return user, nil
 
 }
