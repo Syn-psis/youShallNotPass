@@ -263,7 +263,7 @@ func PatchUpdateUser[T any, U any](app apps.AuthApplication, UserID string, Upda
 	if err != nil {
 		return user, err
 	}
-
+	fmt.Print(string(body))
 	payload := bytes.NewReader(body)
 
 	request, err := http.NewRequest("PUT", url, payload)
