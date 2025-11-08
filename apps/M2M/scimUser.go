@@ -203,6 +203,7 @@ func PutUpdateUser[T any, U any](app apps.AuthApplication, UserID string, Update
 
 	request.Header.Set("Authorization", "Bearer "+app.GetToken())
 	request.Header.Set("accept", "application/scim+json")
+	request.Header.Set("Content-Type", "application/scim+json")
 
 	response, err := app.GetClient().Do(request)
 	if err != nil {
