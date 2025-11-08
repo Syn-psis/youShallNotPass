@@ -273,6 +273,7 @@ func PatchUpdateUser[T any, U any](app apps.AuthApplication, UserID string, Upda
 
 	request.Header.Set("Authorization", "Bearer "+app.GetToken())
 	request.Header.Set("accept", "application/scim+json")
+	request.Header.Set("Content-Type", "application/scim+json")
 
 	response, err := app.GetClient().Do(request)
 	if err != nil {
@@ -280,7 +281,7 @@ func PatchUpdateUser[T any, U any](app apps.AuthApplication, UserID string, Upda
 	}
 
 	if response.StatusCode != 200 {
-		errorMessage := fmt.Sprintf("could not update user due to server response: %d", response.StatusCode)
+		errorMessage := fmt.Sprintf("could not update user due to server response: %d,%s", response.StatusCode, response.Status)
 		return user, errors.New(errorMessage)
 	}
 
