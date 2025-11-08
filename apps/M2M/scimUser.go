@@ -284,6 +284,7 @@ func PatchUpdateUser[T any, U any](app apps.AuthApplication, UserID string, Upda
 		errorMessage := fmt.Sprintf("could not update user due to server response: %d,%s", response.StatusCode, response.Status)
 		return user, errors.New(errorMessage)
 	}
+	fmt.Print(response.Body)
 
 	defer response.Body.Close()
 
