@@ -210,7 +210,7 @@ func PutUpdateUser[T any, U any](app apps.AuthApplication, UserID string, Update
 	}
 
 	if response.StatusCode != 200 {
-		errorMessage := fmt.Sprintf("could not update user due to server response: %d", response.StatusCode)
+		errorMessage := fmt.Sprintf("could not update user due to server response: %d,%s", response.StatusCode, response.Status)
 		return user, errors.New(errorMessage)
 	}
 
