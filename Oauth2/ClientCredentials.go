@@ -11,8 +11,7 @@ import (
 )
 
 const (
-	TOKEN_ENDPOINT = "oauth2/token"
-	GRANT_TYPE     = "client_credentials"
+	GRANT_TYPE = "client_credentials"
 )
 
 type ClientCredentials struct {
@@ -110,11 +109,10 @@ func (m *ClientCredentials) GetToken() string {
 }
 
 func (m *ClientCredentials) retriveToken() Token {
-	url := fmt.Sprintf("%s/%s", m.host, TOKEN_ENDPOINT)
 	body := fmt.Sprintf("grant_type=%s&scope=%s", GRANT_TYPE, m.scopes)
 	payload := strings.NewReader(body)
 
-	request, err := http.NewRequest("POST", url, payload)
+	request, err := http.NewRequest("POST", m.host, payload)
 
 	if err != nil {
 		panic("was not able to generate request")
