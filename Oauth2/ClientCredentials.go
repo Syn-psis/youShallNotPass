@@ -1,4 +1,4 @@
-package m2m
+package oauth2
 
 import (
 	"crypto/tls"
@@ -15,7 +15,7 @@ const (
 	GRANT_TYPE     = "client_credentials"
 )
 
-type M2M struct {
+type ClientCredentials struct {
 	lock sync.RWMutex
 
 	clientId     string
@@ -36,14 +36,14 @@ type Token struct {
 }
 
 type ApplicationBuilder interface {
-	New() M2M
+	New() ClientCredentials
 	ClientId(clientId string)
 	ClientSecret()
 	Scopes()
 	Host()
 }
 
-func New() M2M {
+func New() ClientCredentials {
 
 	client := &http.Client{
 		Transport: &http.Transport{
@@ -53,7 +53,7 @@ func New() M2M {
 		},
 	}
 
-	return M2M{
+	return ClientCredentials{
 		clientId:     "",
 		clientSecret: "",
 		scopes:       "",
@@ -65,19 +65,19 @@ func New() M2M {
 	}
 }
 
-func (m *M2M) ClientId(clientID string) {
+func (m *ClientCredentials) ClientId(clientID string) {
 	m.clientId = clientID
 }
 
-func (m *M2M) ClientSecret(secret string) {
+func (m *ClientCredentials) ClientSecret(secret string) {
 	m.clientSecret = secret
 }
 
-func (m *M2M) Scopes(scope string) {
+func (m *ClientCredentials) Scopes(scope string) {
 	m.scopes = scope
 }
 
-func (m *M2M) Host(host string) {
+func (m *ClientCredentials) Host(host string) {
 	m.host = host
 }
 
@@ -87,7 +87,7 @@ type Application interface {
 	retriveToken() Token
 }
 
-func (m *M2M) GetToken() string {
+func (m *ClientCredentials) GetToken() string {
 	now := time.Now()
 
 	if now.After(m.expiration) {
@@ -109,7 +109,7 @@ func (m *M2M) GetToken() string {
 	}
 }
 
-func (m *M2M) retriveToken() Token {
+func (m *ClientCredentials) retriveToken() Token {
 	url := fmt.Sprintf("%s/%s", m.host, TOKEN_ENDPOINT)
 	body := fmt.Sprintf("grant_type=%s&scope=%s", GRANT_TYPE, m.scopes)
 	payload := strings.NewReader(body)
@@ -140,10 +140,10 @@ func (m *M2M) retriveToken() Token {
 	return token
 }
 
-func (m *M2M) GetHost() string {
+func (m *ClientCredentials) GetHost() string {
 	return m.host
 }
 
-func (m *M2M) GetClient() *http.Client {
+func (m *ClientCredentials) GetClient() *http.Client {
 	return m.client
 }
