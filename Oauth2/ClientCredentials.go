@@ -35,14 +35,12 @@ type Token struct {
 }
 
 type ApplicationBuilder interface {
-	New() ClientCredentials
 	ClientId(clientId string)
-	ClientSecret()
 	Scopes()
 	Host()
 }
 
-func New() ClientCredentials {
+func NewClientCredentilas() ClientCredentials {
 
 	client := &http.Client{
 		Transport: &http.Transport{
