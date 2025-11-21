@@ -1,6 +1,7 @@
 package oauth2
 
 import (
+	"crypto"
 	"crypto/rsa"
 	"crypto/tls"
 	"encoding/json"
@@ -56,8 +57,8 @@ func (m *PrivateKeyJwt) ClientId(clientID string) {
 	m.clientId = clientID
 }
 
-func (m *PrivateKeyJwt) PrivateKey(key rsa.PrivateKey) {
-	m.privateKey = key
+func (m *PrivateKeyJwt) PrivateKey(key crypto.PrivateKey) {
+	m.privateKey = key.(rsa.PrivateKey)
 }
 
 func (m *PrivateKeyJwt) Scopes(scope string) {
